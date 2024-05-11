@@ -4,6 +4,7 @@ namespace DingNotice;
 
 use Psr\Container\ContainerInterface;
 use Hyperf\Contract\ConfigInterface;
+use function Hyperf\Support\make;
 
 class DingNoticeFactory
 {
