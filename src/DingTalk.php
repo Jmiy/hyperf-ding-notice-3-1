@@ -4,6 +4,9 @@ namespace DingNotice;
 
 use DingNotice\Contracts\DingTalkInterface;
 use DingNotice\Contracts\HttpClientInterface;
+use Hyperf\Context\Context;
+use function Hyperf\Support\call;
+use function Hyperf\Support\make;
 
 class DingTalk implements DingTalkInterface
 {
@@ -11,11 +14,11 @@ class DingTalk implements DingTalkInterface
     /**
      * @var
      */
-    protected $config;
+    protected array $config;
     /**
      * @var string
      */
-    protected $robot = 'default';
+    protected string $robot = 'default';
     /**
      * @var DingTalkService
      */
@@ -36,24 +39,51 @@ class DingTalk implements DingTalkInterface
     }
 
     /**
+     * @param string|null $robot
+     * @return DingTalkService
+     */
+    public function getDingTalkService(?string $robot = null): DingTalkService
+    {
+        $_robot = $robot === null ? $this->robot : $robot;
+
+        $key = DingTalkService::class . ':' . $_robot;
+        $dingTalkService = Context::get($key);
+        if (empty($dingTalkService)) {
+            $dingTalkService = make(
+                DingTalkService::class,
+                [
+                    $this->config[$_robot] ?? [],
+                    $this->client
+                ]
+            );
+            Context::set($key, $dingTalkService);
+        }
+
+        return $dingTalkService;
+    }
+
+
+    /**
      * @param string $robot
      * @return $this
      */
     public function with($robot = 'default')
     {
         $this->robot = $robot;
-        $this->dingTalkService = new DingTalkService($this->config[$robot] ?? [], $this->client);
+//        $this->dingTalkService = new DingTalkService($this->config[$robot] ?? [], $this->client);
+//        $this->dingTalkService = $this->getDingTalkService($this->robot);
         return $this;
     }
 
 
     /**
      * @param string $content
+     * @param string|null $robot
      * @return mixed
      */
-    public function text($content = '')
+    public function text(string $content = '', ?string $robot = null): mixed
     {
-        return $this->dingTalkService
+        return $this->getDingTalkService($robot)
             ->setTextMessage($content)
             ->send();
     }
@@ -61,71 +91,77 @@ class DingTalk implements DingTalkInterface
     /**
      * @param $title
      * @param $text
+     * @param string|null $robot
      * @return mixed
      */
-    public function action($title, $text)
+    public function action($title, $text, ?string $robot = null): mixed
     {
-        return $this->dingTalkService
+        return $this->getDingTalkService($robot)
             ->setActionCardMessage($title, $text);
     }
 
     /**
      * @param array $mobiles
      * @param bool $atAll
-     * @return $this
+     * @param string|null $robot
+     * @return $this|DingTalk
      */
-    public function at($mobiles = [], $atAll = false)
+    public function at(array $mobiles = [], bool $atAll = false, ?string $robot = null)
     {
-        $this->dingTalkService
+        $this->getDingTalkService($robot)
             ->setAt($mobiles, $atAll);
         return $this;
     }
 
     /**
-     * @param $title
-     * @param $text
-     * @param $url
+     * @param string $title
+     * @param string $text
+     * @param string $url
      * @param string $picUrl
+     * @param string|null $robot
      * @return mixed
      */
-    public function link($title, $text, $url, $picUrl = '')
+    public function link(string $title = '', string $text = '', string $url = '', string $picUrl = '', ?string $robot = null): mixed
     {
-        return $this->dingTalkService
+        return $this->getDingTalkService($robot)
             ->setLinkMessage($title, $text, $url, $picUrl)
             ->send();
     }
 
     /**
-     * @param $title
-     * @param $markdown
+     * @param string $title
+     * @param string $markdown
+     * @param string|null $robot
      * @return mixed
      */
-    public function markdown($title, $markdown)
+    public function markdown(string $title = '', string $markdown = '', ?string $robot = null): mixed
     {
-        return $this->dingTalkService
+        return $this->getDingTalkService($robot)
             ->setMarkdownMessage($title, $markdown)
             ->send();
     }
 
     /**
-     * @param $title
-     * @param $markdown
+     * @param string $title
+     * @param string $markdown
      * @param int $hideAvatar
      * @param int $btnOrientation
+     * @param string|null $robot
      * @return mixed
      */
-    public function actionCard($title, $markdown, $hideAvatar = 0, $btnOrientation = 0)
+    public function actionCard(string $title = '', string $markdown = '', int $hideAvatar = 0, int $btnOrientation = 0, ?string $robot = null): mixed
     {
-        return $this->dingTalkService
+        return $this->getDingTalkService($robot)
             ->setActionCardMessage($title, $markdown, $hideAvatar, $btnOrientation);
     }
 
     /**
+     * @param string|null $robot
      * @return mixed
      */
-    public function feed()
+    public function feed(?string $robot = null): mixed
     {
-        return $this->dingTalkService
+        return $this->getDingTalkService($robot)
             ->setFeedCardMessage();
     }
 

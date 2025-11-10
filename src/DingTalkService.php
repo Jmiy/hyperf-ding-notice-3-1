@@ -87,8 +87,7 @@ class DingTalkService
      */
     protected function createClient($config)
     {
-        $client = new HttpClient($config);
-        return $client;
+        return new HttpClient($config);
     }
 
 

@@ -14,17 +14,17 @@ use GuzzleHttp\RequestOptions;
 
 class HttpClient implements HttpClientInterface
 {
-    protected $client;
-    protected $config;
+    protected Client $client;
+    protected array $config;
     /**
      * @var string
      */
-    protected $hookUrl = "https://oapi.dingtalk.com/robot/send";
+    protected string $hookUrl = "https://oapi.dingtalk.com/robot/send";
 
     /**
      * @var string
      */
-    protected $accessToken = "";
+    protected string $accessToken = "";
 
     public function __construct($config)
     {
@@ -48,10 +48,9 @@ class HttpClient implements HttpClientInterface
      */
     protected function createClient()
     {
-        $client = new Client([
+        return new Client([
             'timeout' => $this->config['timeout'] ?? 2.0,
         ]);
-        return $client;
     }
 
     /**
