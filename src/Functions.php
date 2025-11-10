@@ -22,7 +22,8 @@ if (!function_exists('ding')) {
         $dingTalk = $container->get(DingTalkInterface::class);
 
         if (empty($arguments)) {
-            return $dingTalk;
+            return $dingTalk->with('default');
+//            return $dingTalk;
         }
 
         if (is_string($arguments[0])) {
