@@ -39,42 +39,42 @@ class DingTalk implements DingTalkInterface
     }
 
     /**
-     * @param string|null $robot
-     * @return DingTalkService
-     */
-    public function getDingTalkService(?string $robot = null): DingTalkService
-    {
-        $_robot = $robot === null ? $this->robot : $robot;
-
-        $key = DingTalkService::class . ':' . $_robot;
-        $dingTalkService = Context::get($key);
-        if (empty($dingTalkService)) {
-            $dingTalkService = make(
-                DingTalkService::class,
-                [
-                    $this->config[$_robot] ?? [],
-                    $this->client
-                ]
-            );
-            Context::set($key, $dingTalkService);
-        }
-
-        return $dingTalkService;
-    }
-
-
-    /**
      * @param string $robot
      * @return $this
      */
     public function with($robot = 'default')
     {
         $this->robot = $robot;
-//        $this->dingTalkService = new DingTalkService($this->config[$robot] ?? [], $this->client);
-//        $this->dingTalkService = $this->getDingTalkService($this->robot);
         return $this;
     }
 
+    /**
+     * @param string|null $robot
+     * @return DingTalkService
+     */
+    public function getDingTalkService(?string $robot = null): DingTalkService
+    {
+        $robot = $robot === null ? $this->robot : $robot;
+
+        $key = DingTalkService::class . ':' . $robot;
+        $dingTalkService = Context::get($key);
+
+        if (!empty($dingTalkService)) {
+            return $dingTalkService;
+        }
+
+        $dingTalkService = make(
+            DingTalkService::class,
+            [
+                $this->config[$robot] ?? [],
+                $this->client,
+                $robot
+            ]
+        );
+        Context::set($key, $dingTalkService);
+
+        return $dingTalkService;
+    }
 
     /**
      * @param string $content

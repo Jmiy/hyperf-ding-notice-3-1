@@ -8,11 +8,13 @@ abstract class Message
     protected $at;
 
 
-    public function getMessage(){
+    public function getMessage()
+    {
         return $this->message;
     }
 
-    protected function makeAt($mobiles = [],$atAll = false){
+    protected function makeAt($mobiles = [], $atAll = false)
+    {
         return [
             'at' => [
                 'atMobiles' => $mobiles,
@@ -21,14 +23,15 @@ abstract class Message
         ];
     }
 
-    public function sendAt($mobiles = [],$atAll = false){
-        $this->at = $this->makeAt($mobiles,$atAll);
+    public function sendAt($mobiles = [], $atAll = false)
+    {
+        $this->at = $this->makeAt($mobiles, $atAll);
         return $this;
     }
 
-    public function getBody(){
-
-        if (empty($this->at)){
+    public function getBody()
+    {
+        if (empty($this->at)) {
             $this->sendAt();
         }
         return $this->message + $this->at;

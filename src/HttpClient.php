@@ -11,11 +11,14 @@ namespace DingNotice;
 use DingNotice\Contracts\HttpClientInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
+use function Hyperf\Config\config;
+use function Hyperf\Support\make;
 
 class HttpClient implements HttpClientInterface
 {
     protected Client $client;
     protected array $config;
+    protected string $robot;
     /**
      * @var string
      */
@@ -24,42 +27,69 @@ class HttpClient implements HttpClientInterface
     /**
      * @var string
      */
-    protected string $accessToken = "";
+//    protected string $accessToken = "";
 
-    public function __construct($config)
+    public function __construct($config, ?string $robot = null)
     {
-        $this->config = $config;
-        $this->setAccessToken();
+//        $this->config = $config;
+//        $this->setAccessToken();
+        $this->robot = $robot;
         $this->client = $this->createClient();
     }
 
     /**
      *
      */
-    public function setAccessToken()
+//    public function setAccessToken()
+//    {
+//        $this->accessToken = $this->config['token'] ?? '';
+//    }
+
+    /**
+     * 获取配置
+     * @return array
+     */
+    public function getConfig(?string $robot = null): array
     {
-        $this->accessToken = $this->config['token'] ?? '';
+        $robot = $robot === null ? $this->robot : $robot;
+
+        return config('ding.' . $robot, []);
     }
+
 
     /**
      * create a guzzle client
      * @return Client
-     * @author wangju 2019-05-17 20:25
+     * @author jmiy 2025-11-29 16:19
      */
-    protected function createClient()
+    protected function createClient(): Client
     {
-        return new Client([
-            'timeout' => $this->config['timeout'] ?? 2.0,
-        ]);
+        $config = $this->getConfig();
+//        return new Client([
+//            'timeout' => $config['timeout'] ?? 2.0,
+//        ]);
+        return make(
+            Client::class,
+            [
+                'config' => [
+                    'timeout' => $config['timeout'] ?? 2.0,
+                ]
+            ]
+        );
     }
 
     /**
+     * 获取机器人 hookUrl
      * @return string
      */
-    public function getRobotUrl()
+    public function getRobotUrl(): string
     {
-        $query['access_token'] = $this->accessToken;
-        if (isset($this->config['secret']) && $secret = $this->config['secret']) {
+        $config = $this->getConfig();
+
+        $query = [
+            'access_token' => $config['token'] ?? '',
+        ];
+        if (isset($config['secret']) && $secret = $config['secret']) {
             $timestamp = time() . sprintf('%03d', rand(1, 999));
             $sign = hash_hmac('sha256', $timestamp . "\n" . $secret, $secret, true);
             $query['timestamp'] = $timestamp;
@@ -77,19 +107,15 @@ class HttpClient implements HttpClientInterface
      */
     public function send($params): array
     {
+        $config = $this->getConfig();
         $response = $this->client->post($this->getRobotUrl(), [
-//            'body' => json_encode($params),
-//            'headers' => [
-//                'Content-Type' => 'application/json',
-//            ],
-//            'verify' => $this->config['ssl_verify'] ?? true,
 //            RequestOptions::BODY => json_encode($params),
 //            RequestOptions::HEADERS => [
 //                'Content-Type' => 'application/json',
 //            ],
-//            RequestOptions::VERIFY => $this->config['ssl_verify'] ?? true,
+//            RequestOptions::VERIFY => $config['ssl_verify'] ?? true,
             RequestOptions::JSON => $params,
-            RequestOptions::VERIFY => $this->config['ssl_verify'] ?? true,
+            RequestOptions::VERIFY => $config['ssl_verify'] ?? true,
         ]);
 
         $result = $response->getBody()->getContents();

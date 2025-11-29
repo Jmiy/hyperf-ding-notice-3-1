@@ -9,11 +9,14 @@ use DingNotice\Messages\Markdown;
 use DingNotice\Messages\Message;
 use DingNotice\Messages\Text;
 use DingNotice\Contracts\HttpClientInterface;
+use function Hyperf\Config\config;
+use function Hyperf\Support\make;
 
 class DingTalkService
 {
 
-    protected $config;
+    protected array $config;
+    protected string $robot;
 
     /**
      * @var Message
@@ -31,24 +34,48 @@ class DingTalkService
     /**
      * @var HttpClientInterface
      */
-    protected $client;
+    protected HttpClientInterface $client;
 
     /**
      * DingTalkService constructor.
      * @param $config
-     * @param null $client
+     * @param HttpClientInterface|null $client
+     * @param string|null $robot
      */
-    public function __construct($config, HttpClientInterface $client = null)
+    public function __construct($config, HttpClientInterface $client = null, ?string $robot = null)
     {
         $this->config = $config;
+        $this->robot = $robot;
         $this->setTextMessage('null');
 
         if ($client != null) {
             $this->client = $client;
             return;
         }
-        $this->client = $this->createClient($config);
 
+        $this->client = $this->createClient($config, $robot);
+
+    }
+
+    /**
+     * create a guzzle client
+     * @param $config
+     * @param string|null $robot
+     * @return HttpClient
+     * @author jmiy 2025-11-29 16:50
+     */
+    protected function createClient($config, ?string $robot = null): HttpClient
+    {
+//        return new HttpClient($config, $robot);
+
+        return make(
+            HttpClient::class,
+            [
+//                $config, $robot
+                'config' => $config,
+                'robot' => $robot
+            ]
+        );
     }
 
     /**
@@ -81,17 +108,6 @@ class DingTalkService
     }
 
     /**
-     * create a guzzle client
-     * @return HttpClient
-     * @author wangju 2019-05-17 20:25
-     */
-    protected function createClient($config)
-    {
-        return new HttpClient($config);
-    }
-
-
-    /**
      * @param $content
      * @return $this
      */
@@ -109,7 +125,7 @@ class DingTalkService
      * @param string $picUrl
      * @return $this
      */
-    public function setLinkMessage($title, $text, $messageUrl, $picUrl = '')
+    public function setLinkMessage($title, $text, $messageUrl, string $picUrl = '')
     {
         $this->message = new Link($title, $text, $messageUrl, $picUrl);
         $this->message->sendAt($this->mobiles, $this->atAll);
@@ -154,13 +170,27 @@ class DingTalkService
     }
 
     /**
+     * 获取配置
+     * @return array
+     */
+    public function getConfig(?string $robot = null): array
+    {
+        $robot = $robot === null ? $this->robot : $robot;
+
+        return config('ding.' . $robot, []);
+    }
+
+    /**
      * @return bool|array
      */
-    public function send()
+    public function send(?string $robot = null)
     {
-        if (!isset($this->config['enabled']) || !$this->config['enabled']) {
+        $config = $this->getConfig($robot);
+
+        if (!isset($config['enabled']) || !$config['enabled']) {
             return false;
         }
+
         return $this->client->send($this->message->getBody());
     }
 
