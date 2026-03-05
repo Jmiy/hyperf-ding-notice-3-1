@@ -42,7 +42,7 @@ class DingTalkService
      * @param HttpClientInterface|null $client
      * @param string|null $robot
      */
-    public function __construct($config, HttpClientInterface $client = null, ?string $robot = null)
+    public function __construct($config, HttpClientInterface|null $client = null, ?string $robot = null)
     {
         $this->config = $config;
         $this->robot = $robot;
